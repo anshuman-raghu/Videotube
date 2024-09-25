@@ -1,0 +1,20 @@
+{
+  "name": "youtube",
+  "version": "1.0.0",
+  "description": "a vedio player website woth upload",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon src/index.js"
+    
+  },
+  "keywords": [
+    "anshu"
+  ],
+  "author": "Anshuman Raghuwanshi",
+  "license": "ISC",
+  "dependencies": {
+    "D": "^1.0.0",
+    "nodemon": "^3.1.7"
+  }
+}
