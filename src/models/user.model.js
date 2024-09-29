@@ -25,7 +25,7 @@ const userSchema =new Schema(
             trim: true,
             index:true
         },
-        avtar{
+        avatar:{
             type:String, //cloud url for img
             required:true
         },
@@ -50,10 +50,10 @@ const userSchema =new Schema(
         timestamps:true
     }
 )
-userSchema.pre("save", function (next),{
+userSchema.pre("save", async function (next){
     if(!this.isModified("password")) return next();
 
-    this.password=bcrypt.hash(this.password,10)
+    this.password = await bcrypt.hash(this.password,10)
     next();
 })
 
@@ -62,25 +62,26 @@ userSchema.methods.isPasswordCorrect= async function (password){
 }
 
 userSchema.methods.genrateAccessToken= function (){
-    return jwt.sign{
-        _id=this._id,
-        email=this.email,
-        username=this.username,
-    },
+    return jwt.sign(
+    {
+        _id:this._id,
+        email:this.email,
+        username:this.username,
+    }),
     process.env.ACCESS_TOKEN_SECRET,
     {
         expiresIn: process.env.ACCESS_TOKEN_EXPIRY
-    }
+    } 
 }
 
 userSchema.methods.genrateResfreshToken= function (){
-    return jwt.sign{
-        _id=this._id,
+    return jwt.sign({
+        _id:this._id,
     },
     process.env.REFRESH_TOKEN_SECRET,
     {
         expiresIn: process.env.REFRESH_TOKEN_EXPIRY
-    }
+    })
 }
 
 
