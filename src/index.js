@@ -2,8 +2,9 @@ import ConnectDB from './db/index.js'
 import dotenv from 'dotenv'
 import app from './app.js'
 
-dotenv.config()
-
+dotenv.config({
+    path: './.env'
+ })
 ConnectDB()
 .then(()=>{
     app.on("Error",(error)=>{

@@ -22,5 +22,4 @@ app.use("/api/v1/users", userRoutes)
 
 
 
-
 export default app

@@ -29,7 +29,7 @@ const userSchema =new Schema(
             type:String, //cloud url for img
             required:true
         },
-        coverImage: {
+        coverImg: {
             type:String, //cloud url for img
         },
         watchHistory:[

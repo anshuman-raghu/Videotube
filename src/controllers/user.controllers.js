@@ -6,46 +6,51 @@ import { apiResponse } from '../utils/apiResponse.js'
 
 
 
-const ragisterUser= asyncHandler(async(req,res)=>{
+const registerUser= asyncHandler(async(req,res)=>{
     //Get user details
-    const {username,email,fullname,password} = req.body
     
+    const {username,email,fullname,password} = req.body;
+
     //validating the data
     if(
-        [fullname,email,username,password].some((field)=> field?.trim==="")
+        [username,email,fullname,password].some((field)=> field?.trim() === ("" || undefined))
     ){
-        throw new apiError(400,"All fileds are required ")
+        throw new apiError(400,"All fields are required ");
     }
 
     //Checking if user exists
-    const ExistingUser = User.findOne({
+    const ExistingUser = await User.findOne({
         $or:[{username},{email}]
-    })
+    });
 
     if(ExistingUser){
-        throw new apiError(409,"User With Username Or Email Already Exists")
+        throw new apiError(409,"User With Username Or Email Already Exists");
     }
     //Checking Imgs
-    const AvatarlocaFilePath= req.files?.avatar[0]?.path;
-    const coverImglocaFilePath= req.files?.coverImg[0]?.path;
 
-    console.log("Printing req.files", req.files)
-
-    if(AvatarlocaFilePath){
-        throw new apiError (400,"Avatar file is important")
+    
+    const avatarlocaFilePath= req.files?.avatar[0]?.path;
+    if(!avatarlocaFilePath){
+        throw new apiError (400,"avatar file is important Please Provide it")
     }
 
-    //upload file on cloudinary
-    const avatar = await UploadOnCloudinary(AvatarlocaFilePath)
-    const coverImg= await UploadOnCloudinary(coverImglocaFilePath)
+    const avatarC = await UploadOnCloudinary(avatarlocaFilePath)
 
-    if(!avatar){throw new apiError (400,"Avatar file is important")}
+    let coverImglocaFilePath
+    let coverImg
+    if(req.files && Array.isArray(req.files.coverImg) && req.files.coverImg.length > 0){
+        coverImglocaFilePath=req.files.coverImg[0].path;
+        coverImg = await UploadOnCloudinary(coverImglocaFilePath);
+    }
+
+    
+    if(!avatarC){throw new apiError (500,"File unable to upload ")}
 
 
     const user = await User.create({
         fullname,
-        avatar:avatar.url,
-        coverImage:coverImg?.url || "",
+        avatar:avatarC.url,
+        coverImg:coverImg?.url || "",
         email,
         password,
         username:username.toLowerCase()
@@ -64,4 +69,4 @@ const ragisterUser= asyncHandler(async(req,res)=>{
     )   
 })
 
-export {ragisterUser}
+export {registerUser}
