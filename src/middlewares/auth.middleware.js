@@ -1,14 +1,20 @@
-import { jwt } from "jsonwebtoken";
-import { asyncHandler } from "../utils/asyncHandler";
-import { User } from "../models/user.model";
-import {apiError} from "../utils/apiError"
+import jwt from "jsonwebtoken";
+import { asyncHandler } from "../utils/asyncHandler.js";
+import { User } from "../models/user.model.js";
+import {apiError} from "../utils/apiError.js"
 
 
 
 export const verifyJwt = asyncHandler(async(req,res, next)=>{
     try {
-        const Token = req.cookie?.accessToken || req.header(Authorization)?.replace("Bearer ","")
-         
+        console.log(req.cookies);
+        
+        const Token = req.cookies?.accessToken || req.header['Authorization']?.replace("Bearer ","")
+        
+        if(!Token){
+            throw new apiError(404,"User must be login to logout")
+        }
+        
         const decodedToken = jwt.verify(Token, process.env.ACCESS_TOKEN_SECRET)
     
         const user = await User.findById(decodedToken._id).select("-password -refreshtoken")
