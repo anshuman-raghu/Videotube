@@ -11,7 +11,7 @@ export const verifyJwt = asyncHandler(async(req,res, next)=>{
         const Token = req.cookies?.accessToken || req.headers['Authorization']?.replace("Bearer ","")
         
         if(!Token){
-            throw new apiError(404,"User must be login to logout")
+            throw new apiError(404,"User must be login")
         }
         
         const decodedToken = jwt.verify(Token, process.env.ACCESS_TOKEN_SECRET)
