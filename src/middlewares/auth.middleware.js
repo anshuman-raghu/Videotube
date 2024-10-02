@@ -7,9 +7,8 @@ import {apiError} from "../utils/apiError.js"
 
 export const verifyJwt = asyncHandler(async(req,res, next)=>{
     try {
-        console.log(req.cookies);
         
-        const Token = req.cookies?.accessToken || req.header['Authorization']?.replace("Bearer ","")
+        const Token = req.cookies?.accessToken || req.headers['Authorization']?.replace("Bearer ","")
         
         if(!Token){
             throw new apiError(404,"User must be login to logout")
@@ -24,7 +23,7 @@ export const verifyJwt = asyncHandler(async(req,res, next)=>{
         }
         
         req.user = user
-
+       
         next()
 
     } catch (error) {
