@@ -73,7 +73,4 @@ router.route("/history").get(
     verifyJwt,getWatchHistory
 )
 
-
-
-
 export default router
