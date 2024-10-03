@@ -119,7 +119,7 @@ const getVideoById = asyncHandler(async (req, res, next) => {
     }
 
     const video = await Video.findById(id).populate("owner", "fullname avatar username")
-    
+    video.views += 1
     if(!video){
         throw apiError(404, "Video not found")
     }
