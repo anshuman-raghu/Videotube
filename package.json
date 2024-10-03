@@ -1,7 +1,7 @@
 {
   "name": "youtube",
   "version": "1.0.0",
-  "description": "a vedio player website woth upload",
+  "description": "a video player website woth upload",
   "main": "index.js",
   "type": "module",
   "scripts": {

@@ -8,7 +8,7 @@ import { UploadOnCloudinary } from "../utils/cloudinary.js";
 
 const getAllVideos = asyncHandler(async (req, res, next) => {
     const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query
-    const vedio = await Video.aggregatePaginate([
+    const video = await Video.aggregatePaginate([
         {
             $match: {
                 $or:[
@@ -43,7 +43,7 @@ const getAllVideos = asyncHandler(async (req, res, next) => {
                 thumbnail:1,
                 title:1,
                 discription:1,
-                vedioFile:1,
+                videoFile:1,
                 owner:{
                     fullname:1,
                     avatar:1,
@@ -72,15 +72,15 @@ const publishAVideo = asyncHandler(async (req, res, next) => {
         throw apiError(400, "Title and discription are required")
     }
 
-    const vedioFileLocalPath = req?.files?.vedioFile[0]?.path
-    if(!vedioFileLocalPath){
-        throw apiError(400, "Vedio file is required")
+    const videoFileLocalPath = req?.files?.videoFile[0]?.path
+    if(!videoFileLocalPath){
+        throw apiError(400, "Video file is required")
     }
 
-    const vedioFile = await UploadOnCloudinary(vedioFileLocalPath)
+    const videoFile = await UploadOnCloudinary(videoFileLocalPath)
 
-    if(!vedioFile.url){
-        throw apiError(500, "Failed to upload vedio file")
+    if(!videoFile.url){
+        throw apiError(500, "Failed to upload video file")
     }
 
     const thumbnailLocalPath = req?.files?.thumbnail[0]?.path
@@ -95,53 +95,53 @@ const publishAVideo = asyncHandler(async (req, res, next) => {
         throw apiError(500, "Failed to upload thumbnail")
     }
 
-    const savedVedio = await Video.create({
+    const savedVideo = await Video.create({
         title,
         discription,
-        vedioFile:vedioFile.url,
+        videoFile:videoFile.url,
         thumbnail:thumbnail.url,
-        duration:vedioFile.duration,
+        duration:videoFile.duration,
         owner:req.user._id
     })
 
-    if(!savedVedio){
-        throw apiError(500, "Failed to save vedio")
+    if(!savedVideo){
+        throw apiError(500, "Failed to save video")
     }
 
-    return res.status(201).json(new apiResponse(201, "Vedio Uploded successfully", {savedVedio}))
+    return res.status(201).json(new apiResponse(201, "Video Uploded successfully", {savedVideo}))
 })
 
 const getVideoById = asyncHandler(async (req, res, next) => {
     const {id} = req.params
 
     if(!isValidObjectId(id)){
-        throw apiError(400, "Invalid vedio id")
+        throw apiError(400, "Invalid video id")
     }
 
-    const vedio = await Video.findById(id).populate("owner", "fullname avatar username")
+    const video = await Video.findById(id).populate("owner", "fullname avatar username")
     
-    if(!vedio){
-        throw apiError(404, "Vedio not found")
+    if(!video){
+        throw apiError(404, "Video not found")
     }
 
-    return res.status(200).json(new apiResponse(200, "Vedio found", {vedio}))
+    return res.status(200).json(new apiResponse(200, "Video found", {video}))
 })
 
 const updateVideo = asyncHandler(async (req, res, next) => {
     const {id} = req.params
 
     if(!isValidObjectId(id)){
-        throw apiError(400, "Invalid vedio id")
+        throw apiError(400, "Invalid video id")
     }
 
-    const vedio = await Video.findById(id)
+    const video = await Video.findById(id)
 
-    if(!vedio){
-        throw apiError(404, "Vedio not found")
+    if(!video){
+        throw apiError(404, "Video not found")
     }
 
-    if(!((vedio.owner).equals(req.user._id))){
-        throw apiError(403, "You are not authorized to update this vedio")
+    if(!((video.owner).equals(req.user._id))){
+        throw apiError(403, "You are not authorized to update this video")
     }
 
     const newThumbnailpath = req?.file?.path
@@ -156,13 +156,13 @@ const updateVideo = asyncHandler(async (req, res, next) => {
     }
 
     try {
-        await deleteOnCloudinary(vedio.thumbnail)
+        await deleteOnCloudinary(video.thumbnail)
     } catch (error) {
         throw apiError(500, "Failed to delete old thumbnail")
     }
 
     const {title, discription} = req.body
-    const updatedVedio = await Video.findByIdAndUpdate(
+    const updatedVideo = await Video.findByIdAndUpdate(
         id,
         {
             $set:{
@@ -175,66 +175,66 @@ const updateVideo = asyncHandler(async (req, res, next) => {
             new:true
         }
     )
-    res.status(200).json(new apiResponse(200, "Vedio details updated successfully", {updatedVedio}))    
+    res.status(200).json(new apiResponse(200, "Video details updated successfully", {updatedVideo}))    
 })
 
 const deleteVideo = asyncHandler(async (req, res, next) => {
     const {id} = req.params
 
     if(!isValidObjectId(id)){
-        throw apiError(400, "Invalid vedio id")
+        throw apiError(400, "Invalid video id")
     }
 
-    const vedio = await Video.findById(id)
+    const video = await Video.findById(id)
 
-    if(!vedio){
-        throw apiError(404, "Vedio not found")
+    if(!video){
+        throw apiError(404, "Video not found")
     }
 
-    if(!((vedio.owner).equals(req.user._id))){
-        throw apiError(403, "You are not authorized to delete this vedio")
+    if(!((video.owner).equals(req.user._id))){
+        throw apiError(403, "You are not authorized to delete this video")
     }
 
     try {
-        await deleteOnCloudinary(vedio.thumbnail)
-        await deleteOnCloudinary(vedio.vedioFile)
+        await deleteOnCloudinary(video.thumbnail)
+        await deleteOnCloudinary(video.videoFile)
     } catch (error) {
-        throw apiError(500, "Failed to delete vedio files")
+        throw apiError(500, "Failed to delete video files")
     }
 
-    const deletedVedio = await Video.findByIdAndDelete(id)
+    const deletedVideo = await Video.findByIdAndDelete(id)
 
 
-    res.status(200).json(new apiResponse(200,{deletedVedio}, "Vedio deleted successfully"))
+    res.status(200).json(new apiResponse(200,{deletedVideo}, "Video deleted successfully"))
 })
 
 const togglePublishStatus = asyncHandler(async (req, res, next) => {
     const {id} = req.params
 
     if(!isValidObjectId(id)){
-        throw apiError(400, "Invalid vedio id")
+        throw apiError(400, "Invalid video id")
     }
 
-    const vedio = await Video.findById(id)
+    const video = await Video.findById(id)
 
-    if(!vedio){
-        throw apiError(404, "Vedio not found")
+    if(!video){
+        throw apiError(404, "Video not found")
     }
-    if(!((vedio.owner).equals(req.user._id))){
-        throw apiError(403, "You are not authorized to update this vedio")
+    if(!((video.owner).equals(req.user._id))){
+        throw apiError(403, "You are not authorized to update this video")
     }
-    const updatedVedio = await Video.findByIdAndUpdate(
+    const updatedVideo = await Video.findByIdAndUpdate(
         id,
         {
             $set:{
-                isPublished:!vedio.isPublished
+                isPublished:!video.isPublished
             }
         },
         {
             new:true
         }
     )
-    res.status(200).json(new apiResponse(200, "Vedio publish status updated successfully", {updatedVedio}))
+    res.status(200).json(new apiResponse(200, "Video publish status updated successfully", {updatedVideo}))
 })
 
 
