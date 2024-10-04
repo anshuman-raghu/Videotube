@@ -1,5 +1,5 @@
 import mongoose, { isValidObjectId } from "mongoose"
-import {Subscription} from "../models/subscription.model.js"
+import {Subscription} from "../models/Subscription.model.js"
 import {User} from "../models/user.model.js"
 import {apiError} from "../utils/apiError.js"
 import {apiResponse} from "../utils/apiResponse.js"
@@ -8,8 +8,12 @@ import {asyncHandler} from "../utils/asyncHandler.js"
 
 const toggleSubscription = asyncHandler(async (req, res, next) => {
     const {channelId} = req.params
-    const {userId} = req.user
-
+    const {_id} = req.user
+    const userId = _id // have to done this because in req.user there is no userId
+        
+    if(!isValidObjectId(userId)){
+        throw new apiError(400, "Invalid user id")
+    }
     if(!isValidObjectId(channelId)){
         throw new apiError(400, "Invalid channel id")
     }
@@ -34,27 +38,33 @@ const toggleSubscription = asyncHandler(async (req, res, next) => {
     //if come here mean it is not subscribed
     const newSubscription = await Subscription.create({
         channel: channelId,
-        subscriber: userId
+        subscriber: userId,
     })
 
     if(!newSubscription){
         throw new apiError(400, "Subscription not created")
     }
-    res.status(201).json(new apiResponse(201, "Subscribed Succesfully",{newSubscription}))
+    res.status(201).json(new apiResponse(201, "Subscribed Succesfully",{
+        channelId: newSubscription.channel,
+        userId: newSubscription.subscriber,
+        createdAt: newSubscription.createdAt
+    }))
 })
 
-const getUserChannelSubscribers = asyncHandler(async (req, res, next) => {
+const getSubscribersUsers = asyncHandler(async (req, res, next) => {
     //ese Subscription object jinke channel me is channel ki id ho
-    const {channelId} = req.params
+    const {userId} = req.params
+    console.log(req.params);
 
-    if(!isValidObjectId(channelId)){
+
+    if(!isValidObjectId(userId)){
         throw new apiError(400, "Invalid channel id")
     }
 
-    const subscribersList = await Subscription.aggrigate([
+    const subscribersList = await Subscription.aggregate([
         {
             $match:{
-                channel:new mongoose.Types.ObjectId(channelId)
+                channel:new mongoose.Types.ObjectId(userId)
             },
         },
         {
@@ -62,17 +72,17 @@ const getUserChannelSubscribers = asyncHandler(async (req, res, next) => {
                 from:"users",
                 localField:"subscriber",
                 foreignField:"_id",
-                as:"SubscriberDetials"
+                as:"SubscriberDetials",
             },
         },
         {
-            $unwind:{
-                $SubscriberDetials
-            }
+            $unwind:"$SubscriberDetials",
+            
         },
-        {
+        {   
             $project:{
-                subscriberId:"$SubscriberDetials._id",
+                _id:0,
+                userId:"$SubscriberDetials._id",
                 subscriberName:"$SubscriberDetials.fullname",
                 subscriberAvatar:"$SubscriberDetials.avatar"
             }
@@ -81,9 +91,9 @@ const getUserChannelSubscribers = asyncHandler(async (req, res, next) => {
     return res.status(200).json(new apiResponse(200, "Subscribers List ", {subscribersList}))
 })
 const getSubscribedChannels = asyncHandler(async (req, res, next) => {
-    const {userId} = req.user
-
-    const channelList = await Subscription.aggrigate([
+    const {userId} = req.params
+    
+    const channelList = await Subscription.aggregate([
         {
             $match:{
                 subscriber:new mongoose.Types.ObjectId(userId)
@@ -102,6 +112,7 @@ const getSubscribedChannels = asyncHandler(async (req, res, next) => {
         },
         {
             $project:{
+                _id:0,
                 channelId:"$ChannelDetials._id",
                 channelName:"$ChannelDetials.fullname",
                 channelAvatar:"$ChannelDetials.avatar"
@@ -111,15 +122,8 @@ const getSubscribedChannels = asyncHandler(async (req, res, next) => {
     return res.status(200).json(new apiResponse(200, "Subscribed Channels", {channelList}))
 })
 
-
-
-
-
-
-
-
 export {
     toggleSubscription,
-    getUserChannelSubscribers,
+    getSubscribersUsers,
     getSubscribedChannels
 }

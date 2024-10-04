@@ -1,13 +1,15 @@
 import mongoose,{isValidObjectId} from "mongoose";
-import Video from "../models/video.model.js";
-import User from "../models/user.model.js";
+import {Video} from "../models/video.model.js";
+import {User} from "../models/user.model.js";
 import { apiError } from "../utils/apiError.js";
 import { apiResponse } from "../utils/apiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { UploadOnCloudinary } from "../utils/cloudinary.js";
+import {UploadOnCloudinary , deleteOnCloudinary  } from "../utils/cloudinary.js";
+
 
 const getAllVideos = asyncHandler(async (req, res, next) => {
-    const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query
+    const { page = 1, limit = 10, query='', sortBy='createdAt', sortType='asc', userId } = req.query
+    
     const video = await Video.aggregatePaginate([
         {
             $match: {
@@ -63,36 +65,38 @@ const getAllVideos = asyncHandler(async (req, res, next) => {
             $limit: parseInt(limit)
         }
     ])
+    
+    return res.status(200).json(new apiResponse(200, {video}, "All videos"))
 })
 
 const publishAVideo = asyncHandler(async (req, res, next) => {
     const{title, discription} = req.body
 
     if(!title || !discription){
-        throw apiError(400, "Title and discription are required")
+        throw new apiError(400, "Title and discription are required")
     }
 
     const videoFileLocalPath = req?.files?.videoFile[0]?.path
     if(!videoFileLocalPath){
-        throw apiError(400, "Video file is required")
+        throw new apiError(400, "Video file is required")
     }
 
     const videoFile = await UploadOnCloudinary(videoFileLocalPath)
 
     if(!videoFile.url){
-        throw apiError(500, "Failed to upload video file")
+        throw new apiError(500, "Failed to upload video file")
     }
 
     const thumbnailLocalPath = req?.files?.thumbnail[0]?.path
 
     if(!thumbnailLocalPath){
-        throw apiError(400, "Thumbnail is required")
+        throw new apiError(400, "Thumbnail is required")
     }
 
     const thumbnail = await UploadOnCloudinary(thumbnailLocalPath)
 
     if(!thumbnail.url){
-        throw apiError(500, "Failed to upload thumbnail")
+        throw new apiError(500, "Failed to upload thumbnail")
     }
 
     const savedVideo = await Video.create({
@@ -105,7 +109,7 @@ const publishAVideo = asyncHandler(async (req, res, next) => {
     })
 
     if(!savedVideo){
-        throw apiError(500, "Failed to save video")
+        throw new apiError(500, "Failed to save video")
     }
 
     return res.status(201).json(new apiResponse(201, "Video Uploded successfully", {savedVideo}))
@@ -113,15 +117,17 @@ const publishAVideo = asyncHandler(async (req, res, next) => {
 
 const getVideoById = asyncHandler(async (req, res, next) => {
     const {id} = req.params
-
+    const {title, discription} = req.body
+    
     if(!isValidObjectId(id)){
-        throw apiError(400, "Invalid video id")
+        throw new apiError(400, "Invalid video id")
     }
 
     const video = await Video.findById(id).populate("owner", "fullname avatar username")
     video.views += 1
+    video.save()
     if(!video){
-        throw apiError(404, "Video not found")
+        throw new apiError(404, "Video not found")
     }
 
     return res.status(200).json(new apiResponse(200, "Video found", {video}))
@@ -129,36 +135,37 @@ const getVideoById = asyncHandler(async (req, res, next) => {
 
 const updateVideo = asyncHandler(async (req, res, next) => {
     const {id} = req.params
-
+    console.log(req.file);
     if(!isValidObjectId(id)){
-        throw apiError(400, "Invalid video id")
+        throw new apiError(400, "Invalid video id")
     }
 
     const video = await Video.findById(id)
 
     if(!video){
-        throw apiError(404, "Video not found")
+        throw new apiError(404, "Video not found")
     }
 
     if(!((video.owner).equals(req.user._id))){
-        throw apiError(403, "You are not authorized to update this video")
+        throw new apiError(403, "You are not authorized to update this video")
     }
 
     const newThumbnailpath = req?.file?.path
     if(!newThumbnailpath){
-        throw apiError(400, "Thumbnail is required")
+        throw new apiError(400, "Thumbnail is required")
     }
 
     const newThumbnail = await UploadOnCloudinary(newThumbnailpath)
 
     if(!newThumbnail.url){
-        throw apiError(500, "Failed to upload thumbnail")
+        throw new apiError(500, "Failed to upload thumbnail")
     }
-
+    console.log(video.thumbnail);
+    console.log(newThumbnail.url);
     try {
         await deleteOnCloudinary(video.thumbnail)
     } catch (error) {
-        throw apiError(500, "Failed to delete old thumbnail")
+        throw new apiError(500, "Failed to delete old thumbnail")
     }
 
     const {title, discription} = req.body
@@ -182,24 +189,24 @@ const deleteVideo = asyncHandler(async (req, res, next) => {
     const {id} = req.params
 
     if(!isValidObjectId(id)){
-        throw apiError(400, "Invalid video id")
+        throw new apiError(400, "Invalid video id")
     }
 
     const video = await Video.findById(id)
 
     if(!video){
-        throw apiError(404, "Video not found")
+        throw new apiError(404, "Video not found")
     }
 
     if(!((video.owner).equals(req.user._id))){
-        throw apiError(403, "You are not authorized to delete this video")
+        throw new apiError(403, "You are not authorized to delete this video")
     }
 
     try {
         await deleteOnCloudinary(video.thumbnail)
         await deleteOnCloudinary(video.videoFile)
     } catch (error) {
-        throw apiError(500, "Failed to delete video files")
+        throw new apiError(500, "Failed to delete video files")
     }
 
     const deletedVideo = await Video.findByIdAndDelete(id)
@@ -212,16 +219,16 @@ const togglePublishStatus = asyncHandler(async (req, res, next) => {
     const {id} = req.params
 
     if(!isValidObjectId(id)){
-        throw apiError(400, "Invalid video id")
+        throw new apiError(400, "Invalid video id")
     }
 
     const video = await Video.findById(id)
 
     if(!video){
-        throw apiError(404, "Video not found")
+        throw new apiError(404, "Video not found")
     }
     if(!((video.owner).equals(req.user._id))){
-        throw apiError(403, "You are not authorized to update this video")
+        throw new apiError(403, "You are not authorized to update this video")
     }
     const updatedVideo = await Video.findByIdAndUpdate(
         id,

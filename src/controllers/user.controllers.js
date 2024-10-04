@@ -33,7 +33,8 @@ const registerUser= asyncHandler(async(req,res)=>{
     //Get user details
     
     const {username,email,fullname,password} = req.body;
-
+    console.log(req.body);
+    
     //validating the data
     if(
         [username,email,fullname,password].some((field)=> field?.trim() === ("" || undefined))
@@ -206,11 +207,6 @@ const refreshAccessToken = asyncHandler(async(req,res)=>{
 
 
 const changePassword = asyncHandler(async(req,res)=>{
-
-    console.log(req.user);
-    console.log(req.body);
-
-    
     
     const {oldPassword,newPassword} = req.body
 
@@ -245,6 +241,13 @@ const updateUserDetails = asyncHandler(async(req,res)=>{
     if(!fullname || !email){
         throw new apiError(400,"Fullname and Email is Required")
     }
+    //check if email is already taken
+    const existing = await User.findOne({email})
+    
+    if(existing){
+        throw new apiError(409,"Email is already taken")
+    }
+
     const user = await User.findByIdAndUpdate(
         req.user._id,
         {

@@ -5,7 +5,7 @@ import {apiError} from "../utils/apiError.js"
 
 
 
-export const verifyJwt = asyncHandler(async(req,res, next)=>{
+export const verifyJWT = asyncHandler(async(req,res, next)=>{
     try {
         
         const Token = req.cookies?.accessToken || req.headers['Authorization']?.replace("Bearer ","")
@@ -17,13 +17,12 @@ export const verifyJwt = asyncHandler(async(req,res, next)=>{
         const decodedToken = jwt.verify(Token, process.env.ACCESS_TOKEN_SECRET)
     
         const user = await User.findById(decodedToken._id).select("-password -refreshtoken")
-    
+        
         if (!user) {
             throw new apiError(405,"Invalid Access Token")        
         }
         
-        req.user = user
-       
+        req.user = user        
         next()
 
     } catch (error) {

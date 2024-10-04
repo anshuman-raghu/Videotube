@@ -1,8 +1,8 @@
 import mongoose, { isValidObjectId } from "mongoose"
 import {Tweet} from "../models/tweet.model.js"
 import {User} from "../models/user.model.js"
-import {apiError, ApiError} from "../utils/apiError.js"
-import {ApiResponse} from "../utils/apiResponse.js"
+import {apiError} from "../utils/apiError.js"
+import {apiResponse} from "../utils/apiResponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
 
 const createTweet = asyncHandler(async (req, res, next) => {
@@ -12,40 +12,40 @@ const createTweet = asyncHandler(async (req, res, next) => {
         owner: req.user._id
     })
     if(!tweet){
-        throw new ApiError(400, "Tweet not created")
+        throw new apiError(400, "Tweet not created")
     }
 
-    res.status(201).json(new ApiResponse("Tweet created", tweet))
+    res.status(201).json(new apiResponse("Tweet created", tweet))
 }
 )
 
 const getUserTweets = asyncHandler(async (req, res, next) => {
     const {userId} = req.params
     if(!isValidObjectId(userId)){
-        throw new ApiError(400, "Invalid user id")
+        throw new apiError(400, "Invalid user id")
     }
     const tweets = await Tweet.find({owner: userId})
     if(!tweets.length){
-        throw new ApiError(404, "No tweets found")
+        throw new apiError(404, "No tweets found")
     }
 
-    res.status(200).json(new ApiResponse("Tweets found", {tweets}))
+    res.status(200).json(new apiResponse(200,"Tweets found", {tweets}))
 })
 const updateTweet = asyncHandler(async (req, res, next) => {
     const {tweetId} = req.params
     const {content} = req.body
-
+    
     if(!isValidObjectId(tweetId)){
-        throw new ApiError(400, "Invalid tweet id")
+        throw new apiError(400, "Invalid tweet id")
     }
     if(!content){
-        throw new ApiError(400, "Content is required")
+        throw new apiError(400, "Content is required")
     }
 
-    const tweet = await findByid(tweetId)
+    const tweet = await Tweet.findById(tweetId)
 
     if(!((tweet.owner).equals(req.user._id))){
-        throw new ApiError(403, "You are not authorized to update this tweet")
+        throw new apiError(403, "You are not authorized to update this tweet")
     }
 
     const newTweet = await Tweet.findByIdAndUpdate(
@@ -58,20 +58,20 @@ const updateTweet = asyncHandler(async (req, res, next) => {
         {
             new: true
         })
-        res.status(200).json(new ApiResponse(200,"Tweet updated", {newTweet})
+        res.status(200).json(new apiResponse(200,"Tweet updated", {newTweet})
     )
 })
 
 const deleteTweet = asyncHandler(async (req, res, next) => {
     const {tweetId} = req.params
     if(!isValidObjectId(tweetId)){
-        throw new ApiError(400, "Invalid tweet id")
+        throw new apiError(400, "Invalid tweet id")
     }
 
-    const tweet = await findByid(tweetId)
+    const tweet = await Tweet.findById(tweetId)
 
     if(!((tweet.owner).equals(req.user._id))){
-        throw new ApiError(403, "You are not authorized to delete this tweet")
+        throw new apiError(403, "You are not authorized to delete this tweet")
     }
 
     try {
@@ -79,7 +79,7 @@ const deleteTweet = asyncHandler(async (req, res, next) => {
     } catch (error) {
         throw new apiError(500,"Some Error occur while deleting tweet")
     }
-    res.status(200).json(new ApiResponse(200, "Tweet deleted"))
+    res.status(200).json(new apiResponse(200, "Tweet deleted"))
 })
 
 export {
