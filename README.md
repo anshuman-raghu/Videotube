@@ -1,6 +1,6 @@
-# 📺 Vediotube
+# 📺 Videotube
 
-**Vediotube** is a modular and scalable video-sharing backend service built using **Node.js**, **Express.js**, and **MongoDB**. It enables users to upload, stream, and interact with videos — including features like comments, likes, subscriptions, playlists, and more. All API routes have been tested using **Postman** for reliability and accuracy.
+**Videotube** is a modular and scalable video-sharing backend service built using **Node.js**, **Express.js**, and **MongoDB**. It enables users to upload, stream, and interact with videos — including features like comments, likes, subscriptions, playlists, and more. All API routes have been tested using **Postman** for reliability and accuracy.
 
 ---
 
@@ -45,7 +45,7 @@
 
 
 🧪 Full Postman API Documentation:
-👉 [Vediotube Postman Collection](https://documenter.getpostman.com/view/38671131/2sB2qUokJr)
+👉 [Videotube Postman Collection](https://documenter.getpostman.com/view/38671131/2sB2qUokJr)
 
 ---
 
